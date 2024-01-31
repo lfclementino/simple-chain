@@ -5,14 +5,12 @@ namespace SimpleChain;
 public static class ChainAsyncExtensions
 {
     public static Chain<IAsyncEnumerable<T>> ToChain<T>(this IAsyncEnumerable<T> source,
-        CancellationToken cancellationToken = default)
-    {
-        return new Chain<IAsyncEnumerable<T>>
+        CancellationToken cancellationToken = default) =>
+        new Chain<IAsyncEnumerable<T>>
         {
             Task = Task.Factory.StartNew(() => source, cancellationToken),
             CancellationToken = cancellationToken
         };
-    }
 
     public static Chain<IAsyncEnumerable<TResult>> AddNode<T, TResult>(this Chain<IAsyncEnumerable<T>> chain,
         Func<T, CancellationToken, TResult> func, CancellationToken? cancellationToken = null) => 

@@ -4,15 +4,22 @@ namespace SimpleChain;
 
 public static class ChainEnumerableExtensions
 {
+    public static Chain<IEnumerable<T>> ToChain<T>(this IEnumerable<T> source,
+        CancellationToken cancellationToken = default) =>
+        new Chain<IEnumerable<T>>
+        {
+            Task = Task.Factory.StartNew(() => source, cancellationToken),
+            CancellationToken = cancellationToken
+        };
 
     public static Chain<IEnumerable<TResult>> AddNode<T, TResult>(this Chain<IEnumerable<T>> chain,
-        Func<T, CancellationToken, TResult> func, CancellationToken? cancellationToken = null) =>
-        chain.AddNodeInternal(async task =>
-        {
-            var previousResult = await task;
-            return previousResult.Select(item => func(item, cancellationToken ??
-                chain.CancellationToken));
-        }, cancellationToken ?? chain.CancellationToken);
+       Func<T, CancellationToken, TResult> func, CancellationToken? cancellationToken = null) =>
+       chain.AddNodeInternal(async task =>
+       {
+           var previousResult = await task;
+           return previousResult.Select(item => func(item, cancellationToken ??
+               chain.CancellationToken));
+       }, cancellationToken ?? chain.CancellationToken);
 
     public static Chain<IEnumerable<TResult>> AddNode<T, TResult>(this Chain<IEnumerable<T>> chain,
         Func<T, TResult> func, CancellationToken? cancellationToken = null) =>
