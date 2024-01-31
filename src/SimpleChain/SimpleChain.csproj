@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Authors>lfclementino</Authors>
+    <Description>
+			A set of extensions to implement in a simple way the Chain-of-responsibility pattern for all types of objects.
+		</Description>
+    <PackageTags>chain-of-responsibility;tasks;extensions;async</PackageTags>
+    <Copyright>© electricessence (Oren F.) All rights reserved.</Copyright>
+		<PackageProjectUrl>https://github.com/lfclementino/simple-chain</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/lfclementino/simple-chain</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+    <Version>8.0.1</Version>
+  </PropertyGroup>
+
+</Project>
