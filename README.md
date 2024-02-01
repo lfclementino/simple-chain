@@ -101,10 +101,13 @@ var sale = _repository.GetSale() // returns Task<Sale> type
 var sales = new List<Sale>();
 
 var newSales = await sales.ToChain()
-    .AddNode(sale =>
+    .AddNode(sales =>
     {
-        sale.Total = sale.Products.Sum(x => x.Price);
-        return sale;
+        return sales.Select(sale =>
+        {
+            sale.Total = sale.Products.Sum(x => x.Price);
+            return sale;
+        });
     })
     .AddNode(sale =>
     {

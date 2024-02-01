@@ -10,7 +10,7 @@ public class ChainEnumerableExtensionsTests
         var chain = sale.ToChain();
 
         chain.Should().NotBeNull();
-        chain.Should().BeOfType<Chain<IEnumerable<Sale>>>();
+        chain.Should().BeOfType<Chain<Sale[]>>();
     }
 
     [Fact]
@@ -23,16 +23,21 @@ public class ChainEnumerableExtensionsTests
         sales.Sum(x => x.Total).Should().Be(0);
         sales.Sum(x => x.Tax).Should().Be(0);
 
-        var newSales = await chain.AddNode(sale =>
+        var newSales = await chain.AddNode(sales =>
             {
-
-                sale.Total = sale.Products.Sum(x => x.Price);
-                return sale;
+                return sales.Select(sale =>
+                {
+                    sale.Total = sale.Products.Sum(x => x.Price);
+                    return sale;
+                });
             })
-            .AddNode(sale =>
+            .AddNode(sales =>
             {
-                sale.Tax = sale.Total * 0.12;
-                return sale;
+                return sales.Select(sale =>
+                {
+                    sale.Tax = sale.Total * 0.12;
+                    return sale;
+                });
             });
 
         newSales.Sum(x => x.Total).Should().Be(sales.Sum(y => y.Products.Sum(z => z.Price)));
@@ -49,20 +54,26 @@ public class ChainEnumerableExtensionsTests
         sales.Sum(x => x.Total).Should().Be(0);
         sales.Sum(x => x.Tax).Should().Be(0);
 
-        var newSales = await chain.AddNode(sale =>
+        var newSales = await chain.AddNode(sales =>
             {
-                sale.Total = sale.Products.Sum(x => x.Price);
-                return sale;
+                return sales.Select(sale =>
+                {
+                    sale.Total = sale.Products.Sum(x => x.Price);
+                    return sale;
+                });
             })
-            .AddNode(2, async (sale, ct) =>
+            .AddNode(2, async (sales, ct) =>
             {
                 await Task.Delay(100, ct);
-                return sale;
+                return sales ;
             })
-            .AddNode(sale =>
+            .AddNode(sales =>
             {
-                sale.Tax = sale.Total * 0.12;
-                return sale;
+                return sales.Select(sale =>
+                {
+                    sale.Tax = sale.Total * 0.12;
+                    return sale;
+                });
             });
 
         var resultTax = Math.Round(sales.Sum(y => y.Total * 0.12), 2);
@@ -81,20 +92,26 @@ public class ChainEnumerableExtensionsTests
         sales.Sum(x => x.Total).Should().Be(0);
         sales.Sum(x => x.Tax).Should().Be(0);
 
-        var newSales = await chain.AddNode(sale =>
+        var newSales = await chain.AddNode(sales =>
             {
-                sale.Total = sale.Products.Sum(x => x.Price);
-                return sale;
+                return sales.Select(sale =>
+                {
+                    sale.Total = sale.Products.Sum(x => x.Price);
+                    return sale;
+                });
             })
             .AddNode(async (sale, ct) =>
             {
                 await Task.Delay(100, ct);
                 return sale;
             })
-            .AddNode(sale =>
+            .AddNode(sales =>
             {
-                sale.Tax = sale.Total * 0.12;
-                return sale;
+                return sales.Select(sale =>
+                {
+                    sale.Tax = sale.Total * 0.12;
+                    return sale;
+                });
             });
 
         newSales.Sum(x => x.Total).Should().Be(sales.Sum(y => y.Products.Sum(z => z.Price)));
