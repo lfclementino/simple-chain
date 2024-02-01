@@ -10,7 +10,7 @@ public class ChainEnumerableExtensionsTests
         var chain = sale.ToChain();
 
         chain.Should().NotBeNull();
-        chain.Should().BeOfType<Chain<IEnumerable<Sale>>>();
+        chain.Should().BeOfType<Chain<Sale[]>>();
     }
 
     [Fact]
