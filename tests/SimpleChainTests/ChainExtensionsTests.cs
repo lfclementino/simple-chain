@@ -73,4 +73,20 @@ public class ChainExtensionsTests
         sale.Total.Should().Be(sale.Products.Sum(x => x.Price));
         sale.Tax.Should().Be(sale.Total * 0.12);
     }
+
+    [Fact]
+    public async Task Chain_Using_Wrappers_Should_Run_Correctly_In_Order()
+    {
+        var sale = FakeData.GetFakeSale();
+
+        await sale
+            .Checkout()
+            .AddTotal()
+            .AddTax()
+            .SetStatus(SaleStatus.Closed);
+
+        sale.Total.Should().Be(sale.Products.Sum(x => x.Price));
+        sale.Tax.Should().Be(sale.Total * 0.12);
+        sale.Status.Should().Be(SaleStatus.Closed);
+    }
 }

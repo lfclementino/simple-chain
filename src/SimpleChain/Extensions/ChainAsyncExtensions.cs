@@ -8,7 +8,7 @@ public static class ChainAsyncExtensions
         CancellationToken cancellationToken = default) =>
         new Chain<IAsyncEnumerable<T>>
         {
-            Task = Task.Factory.StartNew(() => source, cancellationToken),
+            Task = Task.Run(() => source, cancellationToken),
             CancellationToken = cancellationToken
         };
 

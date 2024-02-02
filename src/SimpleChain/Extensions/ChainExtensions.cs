@@ -14,7 +14,7 @@ public static class ChainExtensions
     }
 
     public static Chain<T> ToChain<T>(this T source, CancellationToken cancellationToken = default) =>
-        Task.Factory.StartNew(() => source, cancellationToken)
+        Task.Run(() => source, cancellationToken)
         .ToChain(cancellationToken);
 
     public static TaskAwaiter<T> GetAwaiter<T>(this Chain<T> chain) => chain.Task.GetAwaiter();
