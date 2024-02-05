@@ -170,20 +170,20 @@ public class ChainAsyncExtensionsTests
             .AddAsyncNode(chunk =>
             {
                 chunk.Count().Should().BeLessThanOrEqualTo(3);
-                foreach (var sale in chunk)
+                return chunk.Select(sale =>
                 {
                     sale.Total = sale.Products.Sum(x => x.Price);
-                }
-                return chunk;
+                    return sale;
+                });
             })
             .AddAsyncNode(chunk =>
             {
-                foreach (var sale in chunk)
+                return chunk.Select(sale =>
                 {
                     sale.Tax = sale.Total * 0.12;
                     controlList.Add(sale);
-                }
-                return chunk;
+                    return sale;
+                });
             });
 
         var sumTotal = 0.0;

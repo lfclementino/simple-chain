@@ -13,7 +13,7 @@
 		<PackageProjectUrl>https://github.com/lfclementino/simple-chain</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/lfclementino/simple-chain</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
-    <Version>8.0.4</Version>
+    <Version>8.0.5</Version>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>

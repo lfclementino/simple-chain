@@ -1,5 +1,7 @@
 # SimpleChain
 
+[![NuGet version (SimpleChain)](https://img.shields.io/nuget/v/SimpleChain.svg?style=flat-square)](https://www.nuget.org/packages/SimpleChain/) [![GitHub license](https://img.shields.io/github/license/lfclementino/simple-chain.svg)](https://github.com/lfclementino/simple-chain/blob/master/LICENSE)
+
 A set of extensions to implement in a simple way the Chain-of-responsibility pattern for all types of objects.
 
 ## Stack used
@@ -109,10 +111,13 @@ var newSales = await sales.ToChain()
             return sale;
         });
     })
-    .AddNode(sale =>
+    .AddNode(sales =>
     {
-        sale.Tax = sale.Total * 0.12;
-        return sale;
+        return sales.Select(sale =>
+        {
+            sale.Tax = sale.Total * 0.12;
+            return sale;
+        });
     });
 ```
 
@@ -120,15 +125,42 @@ var newSales = await sales.ToChain()
 ```c#
 var asyncSales = await _repository.GetSalesAsync() // functions returns IAsyncEnumerable<Sale>
     .ToChain()
-    .AddNode(sale =>
+    .AddNode(async sales =>
+    {
+        await foreach(var sale in sales)
+        {
+            sale.Total = sale.Products.Sum(x => x.Price);
+            yield return sale;
+        }
+    })
+    .AddNode(async sales =>
+    {
+        await foreach(var sale in sales)
+        {
+            sale.Tax = sale.Total * 0.12;
+            yield return sale;
+        }
+    });
+
+await foreach(var sale in asyncSales.WithCancellationToken(ct))
+{
+    (...)
+}
+```
+
+##### Or you can use `.AddAsyncNode()` directly:
+```c#
+var asyncSales = await _repository.GetSalesAsync() // functions returns IAsyncEnumerable<Sale>
+    .ToChain()
+    .AddAsyncNode(sale =>
     {
         sale.Total = sale.Products.Sum(x => x.Price);
         return sale;
     })
-    .AddNode(sale =>
+    .AddAsyncNode(sale =>
     {
         sale.Tax = sale.Total * 0.12;
-        return sale;
+        yield return sale;
     });
 
 await foreach(var sale in asyncSales.WithCancellationToken(ct))
@@ -138,25 +170,6 @@ await foreach(var sale in asyncSales.WithCancellationToken(ct))
 ```
 
 ### Special Nodes
-#### Parallel Node for `IEnumerable`
-
-> **_NOTE:_**  You can specify the total parallelism degree or use **-1** to use total available
-
-```c#
-var sales = new List<Sale>();
-
-var newSales = await sales.ToChain()
-    .AddNode(4, sale => // telling the node to parallel process with 4 max degree
-    {
-        sale.Total = sale.Products.Sum(x => x.Price);
-        return sale;
-    })
-    .AddNode(sale =>
-    {
-        sale.Tax = sale.Total * 0.12;
-        return sale;
-    });
-```
 
 #### Chunk Node for `IAsyncEnumerable`
 
@@ -165,15 +178,21 @@ var newSales = await sales.ToChain()
 var asyncSales = await _repository.GetSalesAsync() // functions returns IAsyncEnumerable<Sale>
     .ToChain()
     .Chunk(10)
-    .AddNode(sale =>
+    .AddNode(chunk =>
     {
-        sale.Total = sale.Products.Sum(x => x.Price);
-        return sale;
+        return chunk.Select(sale => 
+        {
+            sale.Total = sale.Products.Sum(x => x.Price);
+            return sale;
+        });
     })
-    .AddNode(sale =>
+    .AddNode(chunk =>
     {
-        sale.Tax = sale.Total * 0.12;
-        return sale;
+        return chunk.Select(sale => 
+        {
+            sale.Tax = sale.Total * 0.12;
+            return sale;
+        });
     });
 
 await foreach(var chunk in asyncSales.WithCancellationToken(ct))
