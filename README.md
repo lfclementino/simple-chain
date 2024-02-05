@@ -51,7 +51,7 @@ internal sealed class Product
 
 ### You can start a `Chain` directly like this:
 
-#### `object`
+#### `Any object`
 ```c#
 var sale = new Sale();
 
@@ -160,7 +160,7 @@ var asyncSales = await _repository.GetSalesAsync() // functions returns IAsyncEn
     .AddAsyncNode(sale =>
     {
         sale.Tax = sale.Total * 0.12;
-        yield return sale;
+        return sale;
     });
 
 await foreach(var sale in asyncSales.WithCancellationToken(ct))
@@ -173,12 +173,12 @@ await foreach(var sale in asyncSales.WithCancellationToken(ct))
 
 #### Chunk Node for `IAsyncEnumerable`
 
-> **_NOTE:_**  You can specify the total chunk with _**.Chunk()**_ node
+> **_NOTE:_**  You can specify the chunk size with _**.Chunk()**_ node
 ```c#
 var asyncSales = await _repository.GetSalesAsync() // functions returns IAsyncEnumerable<Sale>
     .ToChain()
     .Chunk(10)
-    .AddNode(chunk =>
+    .AddAsyncNode(chunk =>
     {
         return chunk.Select(sale => 
         {
@@ -186,7 +186,7 @@ var asyncSales = await _repository.GetSalesAsync() // functions returns IAsyncEn
             return sale;
         });
     })
-    .AddNode(chunk =>
+    .AddAsyncNode(chunk =>
     {
         return chunk.Select(sale => 
         {
