@@ -14,9 +14,9 @@ public class ChainEnumerableExtensionsTests
     }
 
     [Fact]
-    public async Task Chain_Should_Run_Correctly_In_Order()
+    public async Task Chain_Should_Run_Correctly_In_Order_With_Parallelism()
     {
-        var sales = FakeData.GetFakesSales(10);
+        var sales = FakeData.GetFakesSales(100);
 
         var chain = sales.ToChain();
 
@@ -25,19 +25,21 @@ public class ChainEnumerableExtensionsTests
 
         var newSales = await chain.AddNode(sales =>
             {
-                return sales.Select(sale =>
+                sales.AsParallel().ForAll(sale =>
                 {
                     sale.Total = sale.Products.Sum(x => x.Price);
-                    return sale;
-                });
+                }
+                );
+                return sales;
             })
             .AddNode(sales =>
             {
-                return sales.Select(sale =>
+                sales.AsParallel().ForAll(sale =>
                 {
                     sale.Tax = sale.Total * 0.12;
-                    return sale;
-                });
+                }
+                );
+                return sales;
             });
 
         newSales.Sum(x => x.Total).Should().Be(sales.Sum(y => y.Products.Sum(z => z.Price)));
@@ -45,9 +47,9 @@ public class ChainEnumerableExtensionsTests
     }
 
     [Fact]
-    public async Task Chain_Should_Run_Correctly_In_Order_With_Parallelism()
+    public async Task Chain_Should_Run_Correctly_In_Order_Without_Parallelism()
     {
-        var sales = FakeData.GetFakesSales(10);
+        var sales = FakeData.GetFakesSales(100);
 
         var chain = sales.ToChain();
 
@@ -61,49 +63,6 @@ public class ChainEnumerableExtensionsTests
                     sale.Total = sale.Products.Sum(x => x.Price);
                     return sale;
                 });
-            })
-            .AddNode(2, async (sales, ct) =>
-            {
-                await Task.Delay(100, ct);
-                return sales ;
-            })
-            .AddNode(sales =>
-            {
-                return sales.Select(sale =>
-                {
-                    sale.Tax = sale.Total * 0.12;
-                    return sale;
-                });
-            });
-
-        var resultTax = Math.Round(sales.Sum(y => y.Total * 0.12), 2);
-
-        newSales.Sum(x => x.Total).Should().Be(sales.Sum(y => y.Products.Sum(z => z.Price)));
-        Math.Round(newSales.Sum(x => x.Tax), 2).Should().Be(resultTax);
-    }
-
-    [Fact]
-    public async Task Chain_Should_Run_Correctly_In_Order_Without_Parallism()
-    {
-        var sales = FakeData.GetFakesSales(10);
-
-        var chain = sales.ToChain();
-
-        sales.Sum(x => x.Total).Should().Be(0);
-        sales.Sum(x => x.Tax).Should().Be(0);
-
-        var newSales = await chain.AddNode(sales =>
-            {
-                return sales.Select(sale =>
-                {
-                    sale.Total = sale.Products.Sum(x => x.Price);
-                    return sale;
-                });
-            })
-            .AddNode(async (sale, ct) =>
-            {
-                await Task.Delay(100, ct);
-                return sale;
             })
             .AddNode(sales =>
             {

@@ -4,114 +4,89 @@ namespace SimpleChain;
 
 public static class ChainAsyncExtensions
 {
-    public static Chain<IAsyncEnumerable<T>> ToChain<T>(this IAsyncEnumerable<T> source,
-        CancellationToken cancellationToken = default) =>
-        new Chain<IAsyncEnumerable<T>>
-        {
-            Task = Task.Run(() => source, cancellationToken),
-            CancellationToken = cancellationToken
-        };
-
-    public static Chain<IAsyncEnumerable<TResult>> AddNode<T, TResult>(this Chain<IAsyncEnumerable<T>> chain,
-        Func<T, CancellationToken, TResult> func, CancellationToken? cancellationToken = null) => 
+    public static Chain<IAsyncEnumerable<TResult>> AddAsyncNode<T, TResult>(this Chain<IAsyncEnumerable<T>> chain,
+        Func<T, CancellationToken, ChainState, TResult> func) => 
         chain.AddNodeInternal(async task =>
         {
             var previousResult = await task;
 
-            return Core(previousResult, cancellationToken ?? chain.CancellationToken);
+            return Core(previousResult, chain.CancellationToken);
 
             async IAsyncEnumerable<TResult> Core(IAsyncEnumerable<T> source,
             [EnumeratorCancellation] CancellationToken ct)
             {
                 await foreach (var item in source.WithCancellation(ct))
                 {
-                    yield return func(item, ct);
+                    ct.ThrowIfCancellationRequested();
+                    yield return func(item, ct, chain.State);
                 }
             }
-        }, cancellationToken ?? chain.CancellationToken);
+        }, chain.CancellationToken);
 
-    public static Chain<IAsyncEnumerable<TResult>> AddNode<T, TResult>(this Chain<IAsyncEnumerable<T>> chain,
-        Func<T, TResult> func, CancellationToken? cancellationToken = null) =>
-        AddNode(chain, (obj, _) => func(obj), cancellationToken);
+    public static Chain<IAsyncEnumerable<TResult>> AddAsyncNode<T, TResult>(this Chain<IAsyncEnumerable<T>> chain,
+        Func<T, TResult> func) =>
+        AddAsyncNode(chain, (obj, _, _) => func(obj));
 
-    public static Chain AddNode<T>(this Chain<IAsyncEnumerable<T>> chain,
-        Action<T, CancellationToken> action, CancellationToken? cancellationToken = null) => 
+    public static Chain<IAsyncEnumerable<TResult>> AddAsyncNode<T, TResult>(this Chain<IAsyncEnumerable<T>> chain,
+        Func<T, CancellationToken, TResult> func) =>
+        AddAsyncNode(chain, (obj, ct, _) => func(obj, ct));
+
+    public static Chain AddAsyncNode<T>(this Chain<IAsyncEnumerable<T>> chain,
+        Action<T, CancellationToken, ChainState> action) => 
         chain.AddNodeInternal(async task =>
         {
             var previousResult = await task;
 
-            await foreach (var item in previousResult.WithCancellation(cancellationToken ?? chain.CancellationToken))
+            await foreach (var item in previousResult.WithCancellation(chain.CancellationToken))
             {
-                action(item, cancellationToken ?? chain.CancellationToken);
+                chain.CancellationToken.ThrowIfCancellationRequested();
+                action(item, chain.CancellationToken, chain.State);
             }
-        }, cancellationToken ?? chain.CancellationToken);
+        }, chain.CancellationToken);
 
-    public static Chain AddNode<T>(this Chain<IAsyncEnumerable<T>> chain,
-        Action<T> action, CancellationToken? cancellationToken = null) =>
-        AddNode(chain, (obj, _) => action(obj), cancellationToken);
+    public static Chain AddAsyncNode<T>(this Chain<IAsyncEnumerable<T>> chain,
+        Action<T> action) =>
+        AddAsyncNode(chain, (obj, _, _) => action(obj));
 
-    public static Chain<IAsyncEnumerable<TResult>> AddNode<T, TResult>(this Chain<IAsyncEnumerable<T>> chain,
-        Func<T, CancellationToken, Task<TResult>> func, CancellationToken? cancellationToken = null) => 
+    public static Chain AddAsyncNode<T>(this Chain<IAsyncEnumerable<T>> chain,
+        Action<T, CancellationToken> action) =>
+        AddAsyncNode(chain, (obj, ct, _) => action(obj, ct));
+
+    public static Chain<IAsyncEnumerable<TResult>> AddAsyncNode<T, TResult>(this Chain<IAsyncEnumerable<T>> chain,
+        Func<T, CancellationToken, ChainState, Task<TResult>> func) => 
         chain.AddNodeInternal(async task =>
         {
             var previousResult = await task;
 
-            return Core(previousResult, cancellationToken ?? chain.CancellationToken);
+            return Core(previousResult, chain.CancellationToken);
 
             async IAsyncEnumerable<TResult> Core(IAsyncEnumerable<T> source,
             [EnumeratorCancellation] CancellationToken ct)
             {
                 await foreach (var item in source.WithCancellation(ct))
                 {
-                    yield return await func(item, ct);
+                    ct.ThrowIfCancellationRequested();  
+                    yield return await func(item, ct, chain.State);
                 }
             }
-        }, cancellationToken ?? chain.CancellationToken);
+        }, chain.CancellationToken);
 
-    public static Chain<IAsyncEnumerable<TResult>> AddNode<T, TResult>(this Chain<IAsyncEnumerable<T>> chain,
-        Func<T, Task<TResult>> func, CancellationToken? cancellationToken = null) =>
-        AddNode(chain, (obj, _) => func(obj), cancellationToken);
+    public static Chain<IAsyncEnumerable<TResult>> AddAsyncNode<T, TResult>(this Chain<IAsyncEnumerable<T>> chain,
+        Func<T, Task<TResult>> func) =>
+        AddAsyncNode(chain, (obj, _, _) => func(obj));
 
-    public static Chain<IAsyncEnumerable<TResult>> AddNode<T, TResult>(this Chain<IAsyncEnumerable<T>> chain,
-        int maxDegreeOfParallelism, Func<T, CancellationToken, TResult> func,
-        CancellationToken? cancellationToken = null)
-    {
-        return chain.AddNodeInternal(async task =>
-        {
-            var previousResult = await task;
-
-            return Core(previousResult, cancellationToken ?? chain.CancellationToken);
-
-            async IAsyncEnumerable<TResult> Core(IAsyncEnumerable<T> source,
-            [EnumeratorCancellation] CancellationToken ct)
-            {
-                var options = new ParallelOptions()
-                {
-                    MaxDegreeOfParallelism = maxDegreeOfParallelism,
-                    CancellationToken = cancellationToken ?? chain.CancellationToken,
-                };
-
-                await foreach (var item in source.WithCancellation(ct))
-                {
-                    yield return func(item, ct);
-                }
-            }
-        }, cancellationToken ?? chain.CancellationToken);
-    }
-
-    public static Chain<IAsyncEnumerable<TResult>> AddNode<T, TResult>(this Chain<IAsyncEnumerable<T>> chain,
-        int maxDegreeOfParallelism, Func<T, TResult> func,
-        CancellationToken? cancellationToken = null) =>
-        AddNode(chain, maxDegreeOfParallelism, (obj, _) => func(obj), cancellationToken);
+    public static Chain<IAsyncEnumerable<TResult>> AddAsyncNode<T, TResult>(this Chain<IAsyncEnumerable<T>> chain,
+        Func<T, CancellationToken, Task<TResult>> func) =>
+        AddAsyncNode(chain, (obj, ct, _) => func(obj, ct));
 
     public static Chain<IAsyncEnumerable<IEnumerable<T>>> Chunk<T>(this Chain<IAsyncEnumerable<T>> chain,
-        int size, CancellationToken? cancellationToken = null)
+        int size)
     {
         return chain.AddNodeInternal(async task =>
         {
             var previousResult = await task;
 
-            return Core(previousResult, cancellationToken ?? chain.CancellationToken);
+            return Core(previousResult, chain.CancellationToken);
 
             async IAsyncEnumerable<IEnumerable<T>> Core(IAsyncEnumerable<T> source,
             [EnumeratorCancellation] CancellationToken ct)
@@ -119,6 +94,7 @@ public static class ChainAsyncExtensions
                 var objList = new List<T>(size);
                 await foreach (var obj in source.WithCancellation(ct))
                 {
+                    ct.ThrowIfCancellationRequested(); 
                     objList.Add(obj);
                     if (objList.Count != size) continue;
                     yield return objList.AsEnumerable();
@@ -127,9 +103,10 @@ public static class ChainAsyncExtensions
 
                 if (objList.Any())
                 {
+                    ct.ThrowIfCancellationRequested();
                     yield return objList.AsEnumerable();
                 }
             }
-        }, cancellationToken ?? chain.CancellationToken);
+        }, chain.CancellationToken);
     }
 }

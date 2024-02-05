@@ -30,7 +30,7 @@ public class ChainExtensionsTests
         var sale = FakeData.GetFakeSale();
 
         var chain = sale.ToChain();
-
+        
         sale.Total.Should().Be(0);
         sale.Tax.Should().Be(0);
 
@@ -88,5 +88,49 @@ public class ChainExtensionsTests
         sale.Total.Should().Be(sale.Products.Sum(x => x.Price));
         sale.Tax.Should().Be(sale.Total * 0.12);
         sale.Status.Should().Be(SaleStatus.Closed);
+    }
+
+    [Fact]
+    public async Task Chain_With_Async_With_CancellationToken_Method_Should_Run_With_Break()
+    {
+        var sale = FakeData.GetFakeSale();
+
+        var result = async () => await sale.ToChain()
+            .AddNode(sale =>
+            {
+                sale.Total = sale.Products.Sum(x => x.Price);
+                return sale;
+            })
+            .AddNode(async (sale, _, state) =>
+            {
+                await state.CancelAsync();
+                return sale;
+            })
+            .AddNode((sale, ct) =>
+            {
+                sale.Tax = sale.Total * 0.12;
+            });
+
+        await result.Should().ThrowAsync<OperationCanceledException>();
+    }
+
+    [Fact]
+    public async Task Chain_With_Async_With_CancellationToken_Method_Should_Run_With_Break_v2()
+    {
+        var sale = FakeData.GetFakeSale();
+
+        var result = async () => await sale.ToChain()
+            .AddNode((sale, _, state) =>
+            {
+                sale.Total = sale.Products.Sum(x => x.Price);
+                state.Cancel();
+                return sale;
+            })
+            .AddNode(sale =>
+            {
+                sale.Tax = sale.Total * 0.12;
+            });
+
+        await result.Should().ThrowAsync<OperationCanceledException>();
     }
 }
