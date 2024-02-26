@@ -34,4 +34,10 @@ public sealed class ChainState : IDisposable
 
     /// <summary>Gets whether cancellation has been requested for this <see cref="ChainState" />.</summary>
     public bool IsCancellationRequested => TokenSource.IsCancellationRequested;
+
+    private bool _isHandled = false;   
+
+    internal bool IsHandled => _isHandled;
+    
+    internal void SetHandled() => _isHandled = true;
 }

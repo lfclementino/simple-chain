@@ -6,14 +6,14 @@
     <Nullable>enable</Nullable>
     <Authors>lfclementino</Authors>
     <Description>
-			A set of extensions to implement in a simple way the Chain-of-responsibility pattern for all types of objects.
+			A set of extensions to implement in a simple way the Chain-of-responsibility or Pipeline patterns for all types of objects.
 		</Description>
-    <PackageTags>chain-of-responsibility;tasks;extensions;async</PackageTags>
-    <Copyright>© electricessence (Oren F.) All rights reserved.</Copyright>
+    <PackageTags>chain-of-responsibility;pipeline;tasks;extensions</PackageTags>
+    <Copyright>© lfclementino All rights reserved.</Copyright>
 		<PackageProjectUrl>https://github.com/lfclementino/simple-chain</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/lfclementino/simple-chain</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
-    <Version>8.0.5</Version>
+    <Version>8.0.6</Version>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>

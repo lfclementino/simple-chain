@@ -7,6 +7,7 @@ internal class Sale
     public double Total { get; set; }
     public double Tax { get; set; }
     public SaleStatus Status { get; set; } = SaleStatus.New;
+    public string? ApprovedBy { get; set; }
 }
 
 internal sealed class Product
