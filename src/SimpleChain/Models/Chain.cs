@@ -7,6 +7,12 @@ public sealed class Chain<T> : ChainBase
         Task = task;
     }
 
+    internal Chain(Task<T> task, CancellationToken cancellationToken) : 
+        base(new ChainState(cancellationToken))
+    {
+        Task = task;
+    }
+
     internal Task<T> Task { get; }
 }
 

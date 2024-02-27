@@ -34,4 +34,30 @@ internal static class Wrappers
             return sale;
         });
     }
+
+    public static Chain<Sale> AddApprover1(this Chain<Sale> chain)
+    {
+        return chain.AddHandlerNode(sale =>
+        {
+            if (sale.Total is > 0 and < 100)
+            {
+                sale.ApprovedBy = "Approver 1";
+                return true;
+            }
+            return false;
+        });
+    }
+
+    public static Chain<Sale> AddApprover2(this Chain<Sale> chain)
+    {
+        return chain.AddHandlerNode(sale =>
+        {
+            if (sale.Total is > 100 and <= 1000)
+            {
+                sale.ApprovedBy = "Approver 2";
+                return true;
+            }
+            return false;
+        });
+    }
 }

@@ -16,7 +16,7 @@ public class ChainExtensionsTests
     [Fact]
     public void ToChain_Create_Chain_From_Task()
     {
-        var task = Task.Run(() => FakeData.GetFakeSale());
+        var task = Task.FromResult(FakeData.GetFakeSale());
 
         var chain = task.ToChain();
 
@@ -30,7 +30,7 @@ public class ChainExtensionsTests
         var sale = FakeData.GetFakeSale();
 
         var chain = sale.ToChain();
-        
+
         sale.Total.Should().Be(0);
         sale.Tax.Should().Be(0);
 
@@ -96,20 +96,20 @@ public class ChainExtensionsTests
         var sale = FakeData.GetFakeSale();
 
         var result = async () => await sale.ToChain()
-            .AddNode(sale =>
-            {
-                sale.Total = sale.Products.Sum(x => x.Price);
-                return sale;
-            })
-            .AddNode(async (sale, _, state) =>
-            {
-                await state.CancelAsync();
-                return sale;
-            })
-            .AddNode((sale, ct) =>
-            {
-                sale.Tax = sale.Total * 0.12;
-            });
+           .AddNode(sale =>
+           {
+               sale.Total = sale.Products.Sum(x => x.Price);
+               return sale;
+           })
+           .AddNode(async (sale, _, state) =>
+           {
+               await state.CancelAsync();
+               return sale;
+           })
+           .AddNode((sale, ct) =>
+           {
+               sale.Tax = sale.Total * 0.12;
+           });
 
         await result.Should().ThrowAsync<OperationCanceledException>();
     }
@@ -132,5 +132,23 @@ public class ChainExtensionsTests
             });
 
         await result.Should().ThrowAsync<OperationCanceledException>();
+    }
+
+    [Fact]
+    public async Task ChainNode_Method_Should_Run()
+    {
+        var sale = FakeData.GetFakeSale();
+
+        await sale.ToChain()
+            .AddNode(sale =>
+            {
+                sale.Total = 50;
+                return sale;
+            })
+            .AddApprover1()
+            .AddApprover2()
+            .ThrowIfNotHandledNode();
+
+        sale.ApprovedBy.Should().Be("Approver 1");
     }
 }

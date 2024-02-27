@@ -2,7 +2,7 @@
 
 [![NuGet version (SimpleChain)](https://img.shields.io/nuget/v/SimpleChain.svg?style=flat-square)](https://www.nuget.org/packages/SimpleChain/) [![GitHub license](https://img.shields.io/github/license/lfclementino/simple-chain.svg)](https://github.com/lfclementino/simple-chain/blob/master/LICENSE)
 
-A set of extensions to implement in a simple way the Chain-of-responsibility pattern for all types of objects.
+A set of extensions to implement in a simple way the `Pipeline` or `Chain-of-responsibility` patterns for all types of objects.
 
 ## Stack used
 
@@ -40,6 +40,8 @@ internal class Sale
     public Product[] Products { get; set; } = Array.Empty<Product>();
     public double Total { get; set; }
     public double Tax { get; set; }
+    public string? ApprovedBy { get; set; }
+    public SaleStatus Status { get; set; } = SaleStatus.New;
 }
 
 internal sealed class Product
@@ -47,9 +49,52 @@ internal sealed class Product
     public required string Name { get; set; }
     public required double Price { get; set; }
 }
+
+internal enum SaleStatus
+{
+    New,
+    Closing,
+    Closed
+}
 ```
 
-### You can start a `Chain` directly like this:
+### &rarr; `Chain-of-responsability` pattern
+
+You can easily create a chain of responsability like this:
+
+Using the `.AddHandlerNode` node, you should return `true` or `false`. When it returns `true` it will ignore the next nodes.
+
+```c#
+var sale = new Sale();
+
+await sale.ToChain()
+    .AddNode(sale =>
+    {
+        sale.Total = 50;
+        return sale;
+    })
+    .AddApprover1()
+    .AddApprover2()
+    .ThrowIfNotHandledNode();
+
+    /// sale.ApprovedBy == "Approver 1"
+```
+
+### &rarr; `Pipeline` pattern
+
+You can wrap functions and write like this with the following wrapping class:
+
+```c#
+var sale = new Sale();
+
+await sale
+    .Checkout()
+    .AddTotal()
+    .AddTax()
+    .SetStatus(SaleStatus.Closed);
+```
+
+
 
 #### `Any object`
 ```c#
@@ -251,4 +296,32 @@ internal static class Wrappers
         });
     }
 }
+```
+
+```c#
+  public static Chain<Sale> AddApprover1(this Chain<Sale> chain)
+  {
+      return chain.AddHandlerNode(sale =>
+      {
+          if (sale.Total is > 0 and < 100)
+          {
+              sale.ApprovedBy = "Approver 1";
+              return true;
+          }
+          return false;
+      });
+  }
+
+  public static Chain<Sale> AddApprover2(this Chain<Sale> chain)
+  {
+      return chain.AddHandlerNode(sale =>
+      {
+          if (sale.Total is > 100 and <= 1000)
+          {
+              sale.ApprovedBy = "Approver 2";
+              return true;
+          }
+          return false;
+      });
+  }
 ```
