@@ -64,6 +64,8 @@ You can easily create a chain of responsability like this:
 
 Using the `.AddHandlerNode` node, you should return `true` or `false`. When it returns `true` it will ignore the next nodes.
 
+> **_NOTE:_**  All extension functions used here are detailed at the end of this README
+
 ```c#
 var sale = new Sale();
 
@@ -83,6 +85,8 @@ await sale.ToChain()
 ### &rarr; `Pipeline` pattern
 
 You can wrap functions and write like this with the following wrapping class:
+
+> **_NOTE:_**  All extension functions used here are detailed at the end of this README
 
 ```c#
 var sale = new Sale();
@@ -245,6 +249,28 @@ await foreach(var chunk in asyncSales.WithCancellationToken(ct))
     (...)
 }
 ```
+
+#### `Pipeline` circuit breaker
+
+You can interrupt the pipeline by calling the `Cancel()` method from `ChainState`. That will throw an exception `OperationCanceledException` by cancelling the local `CancellationToken` from the Chain.
+
+```c#
+    var sale = new Sale();
+
+    var result = async () => await sale.ToChain()
+        .AddNode((sale, _, state) =>
+        {
+            sale.Total = sale.Products.Sum(x => x.Price);
+            state.Cancel();
+            return sale;
+        })
+        .AddNode(sale =>
+        {
+            sale.Tax = sale.Total * 0.12;
+        });
+```
+
+When calling the `state.Cancel();` method the chain execution will be cancelled and an exception of type `OperationCanceledException` will be thrown.
 
 ### Wrapping Node functions
 
