@@ -6,7 +6,7 @@ A set of extensions to implement in a simple way the `Pipeline` or `Chain-of-res
 
 ## Stack used
 
-- .NET 8
+- .NET 9
 - xUnit
 - No dependencies
 
@@ -58,9 +58,9 @@ internal enum SaleStatus
 }
 ```
 
-### &rarr; `Chain-of-responsability` pattern
+### &rarr; `Chain-of-responsibility` pattern
 
-You can easily create a chain of responsability like this:
+You can easily create a chain of responsibility like this:
 
 Using the `.AddHandlerNode` node, you should return `true` or `false`. When it returns `true` it will ignore the next nodes.
 
