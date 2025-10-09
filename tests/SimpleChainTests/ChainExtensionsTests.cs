@@ -151,4 +151,20 @@ public class ChainExtensionsTests
 
         sale.ApprovedBy.Should().Be("Approver 1");
     }
+
+    [Fact]
+    public void Chain_Should_Implement_IDisposable_Correctly()
+    {
+        var sale = FakeData.GetFakeSale();
+        var chain = sale.ToChain();
+
+        // Should not throw before dispose
+        var disposable = chain as IDisposable;
+        disposable.Should().NotBeNull();
+
+        disposable.Dispose();
+
+        // Dispose called again should not throw
+        disposable.Dispose();
+    }
 }
