@@ -2,6 +2,10 @@
 
 public sealed class ChainState : IDisposable
 {
+    private CancellationTokenSource TokenSource { get; set; }
+
+    private bool _isHandled = false;
+
     internal ChainState()
     {
         TokenSource = new CancellationTokenSource();
@@ -12,9 +16,8 @@ public sealed class ChainState : IDisposable
         TokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
     }
 
-    private CancellationTokenSource TokenSource { get; set; }
-
-    internal CancellationToken CancellationToken => TokenSource.Token;
+    /// <summary>Gets whether cancellation has been requested for this <see cref="ChainState" />.</summary>
+    public bool IsCancellationRequested => TokenSource.IsCancellationRequested;
 
     /// <summary>
     /// Communicates a request for cancelling the Chain. Invokes cancellation of the <see cref="ChainState"/>
@@ -32,10 +35,7 @@ public sealed class ChainState : IDisposable
     /// <remarks>This method is not thread-safe for any other concurrent calls.</remarks>
     public void Dispose() => TokenSource.Dispose();
 
-    /// <summary>Gets whether cancellation has been requested for this <see cref="ChainState" />.</summary>
-    public bool IsCancellationRequested => TokenSource.IsCancellationRequested;
-
-    private bool _isHandled = false;   
+    internal CancellationToken CancellationToken => TokenSource.Token;
 
     internal bool IsHandled => _isHandled;
     
